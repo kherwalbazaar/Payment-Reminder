@@ -214,6 +214,20 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Summary Cards */}
+        <div className="px-5 mt-4 flex gap-3">
+          <div className="flex-1 bg-white rounded-[16px] p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+            <p className="text-[11px] font-semibold text-[#9CA3AF] tracking-wide uppercase mb-1">You Gave</p>
+            <p className="text-lg font-bold text-rose-500">₹{customers.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}</p>
+            <p className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">{customers.length} customers</p>
+          </div>
+          <div className="flex-1 bg-white rounded-[16px] p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+            <p className="text-[11px] font-semibold text-[#9CA3AF] tracking-wide uppercase mb-1">You Got</p>
+            <p className="text-lg font-bold text-emerald-500">₹0</p>
+            <p className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">0 customers</p>
+          </div>
+        </div>
+
         {/* Success Toast */}
         <div
           className={`mx-5 mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-[18px] flex items-center gap-3 transform transition-all duration-300 pointer-events-none ${
