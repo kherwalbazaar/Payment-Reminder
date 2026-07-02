@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { defaultCustomers, readStoredCustomers, writeStoredCustomers, type Customer } from "@/lib/customer-storage";
 
 export default function Home() {
+  const router = useRouter();
   const [customerName, setCustomerName] = useState("");
   const [dueAmount, setDueAmount] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -10,19 +13,8 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [amountError, setAmountError] = useState(false);
   const [mobileError, setMobileError] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<{
-    name: string;
-    amount: number;
-    mobile: string;
-    days: number;
-  } | null>(null);
-  const [customers, setCustomers] = useState([
-    { name: "Rahul Sharma", amount: 2500, mobile: "9876543210", days: 3 },
-    { name: "Amit Kumar", amount: 4800, mobile: "8765432109", days: 7 },
-    { name: "Suresh Patel", amount: 1200, mobile: "7654321098", days: 1 },
-    { name: "Vikram Singh", amount: 7500, mobile: "6543210987", days: 12 },
-    { name: "Deepak Verma", amount: 3200, mobile: "5432109876", days: 5 },
-  ]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
 
   const customerNameRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +25,12 @@ export default function Home() {
 
   useEffect(() => {
     customerNameRef.current?.focus();
+    setCustomers(readStoredCustomers());
   }, []);
+
+  useEffect(() => {
+    writeStoredCustomers(customers);
+  }, [customers]);
 
   useEffect(() => {
     if (dueAmount.length > 0 && !isAmountValid) {
@@ -102,6 +99,25 @@ export default function Home() {
 
   return (
     <div className="w-full max-w-[412px] h-[892px] bg-[#F8FAFC] rounded-[40px] shadow-2xl border-8 border-[#1E293B] relative overflow-hidden flex flex-col justify-between select-none">
+      {/* Success Toast */}
+      <div
+        className={`absolute top-4 left-5 right-5 z-30 p-4 bg-emerald-50 border border-emerald-200 rounded-[18px] flex items-center gap-3 transition-all duration-300 pointer-events-none ${
+          showToast ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"
+        }`}
+      >
+        <div className="bg-emerald-500 text-white rounded-full p-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-emerald-900">Reminder Processed</h4>
+          <p className="text-xs text-emerald-700 font-medium">
+            Notification successfully queued for delivery.
+          </p>
+        </div>
+      </div>
+
       <div className="w-full flex-1 overflow-y-auto no-scrollbar pb-12">
         {/* Header */}
         <div className="w-full bg-gradient-to-b from-[#2563EB] to-[#4F46E5] pt-14 pb-20 px-6 rounded-b-[32px] text-center shadow-lg relative">
@@ -216,45 +232,26 @@ export default function Home() {
 
         {/* Summary Cards */}
         <div className="px-5 mt-4 flex gap-3">
-          <div className="flex-1 bg-white rounded-[16px] p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+          <div className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
             <p className="text-[11px] font-semibold text-[#9CA3AF] tracking-wide uppercase mb-1">You Gave</p>
             <p className="text-lg font-bold text-rose-500">₹{customers.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}</p>
             <p className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">{customers.length} customers</p>
           </div>
-          <div className="flex-1 bg-white rounded-[16px] p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+          <div className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
             <p className="text-[11px] font-semibold text-[#9CA3AF] tracking-wide uppercase mb-1">You Got</p>
             <p className="text-lg font-bold text-emerald-500">₹0</p>
             <p className="text-[11px] text-[#9CA3AF] font-medium mt-0.5">0 customers</p>
           </div>
         </div>
 
-        {/* Success Toast */}
-        <div
-          className={`mx-5 mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-[18px] flex items-center gap-3 transform transition-all duration-300 pointer-events-none ${
-            showToast ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
-        >
-          <div className="bg-emerald-500 text-white rounded-full p-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-emerald-900">Reminder Processed</h4>
-            <p className="text-xs text-emerald-700 font-medium">
-              Notification successfully queued for delivery.
-            </p>
-          </div>
-        </div>
-
         {/* Pending Dues List */}
-        <div className="px-5 mt-5">
+        <div className="px-5 mt-4">
           <h3 className="text-xs font-bold text-[#111827] tracking-wide mb-3">Pending Dues</h3>
-          <div className="space-y-2.5">
-            {customers.map((customer, i) => (
+          <div className="space-y-1">
+            {customers.slice(0, 5).map((customer, i) => (
               <div
                 key={i}
-                className="bg-white rounded-[16px] p-4 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                className="bg-white rounded-xl p-3.5 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -273,6 +270,8 @@ export default function Home() {
                     </p>
                   </div>
                   <button
+                    type="button"
+                    aria-label={`View details for ${customer.name}`}
                     onClick={() => setSelectedCustomer(customer)}
                     className="ml-3 w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors shrink-0"
                   >
@@ -284,6 +283,14 @@ export default function Home() {
               </div>
             ))}
           </div>
+          {customers.length > 5 && (
+            <button
+              onClick={() => router.push("/all-dues")}
+              className="w-full mt-3 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-[#2563EB] hover:bg-slate-50 transition-colors"
+            >
+              See All ({customers.length})
+            </button>
+          )}
         </div>
       </div>
 
