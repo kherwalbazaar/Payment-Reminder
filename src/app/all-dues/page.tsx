@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { defaultCustomers, readStoredCustomers, writeStoredCustomers, type Customer } from "@/lib/customer-storage";
+import { readStoredCustomers, type Customer } from "@/lib/customer-storage";
 import { shareWhatsAppImage, sendSms } from "@/lib/payment-actions";
 
 export default function AllDues() {
   const router = useRouter();
-  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
@@ -18,10 +18,6 @@ export default function AllDues() {
 
     loadCustomers();
   }, []);
-
-  useEffect(() => {
-    void writeStoredCustomers(customers);
-  }, [customers]);
 
   return (
     <div className="w-full max-w-[412px] h-[892px] bg-[#F8FAFC] rounded-[40px] shadow-2xl border-8 border-[#1E293B] relative overflow-hidden flex flex-col select-none">
