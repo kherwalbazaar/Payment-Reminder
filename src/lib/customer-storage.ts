@@ -1,6 +1,3 @@
-import { collection, getDocs, addDoc, onSnapshot, type Unsubscribe } from "firebase/firestore";
-import { db, isFirebaseConfigured } from "@/lib/firebase";
-
 export interface Customer {
   name: string;
   amount: number;
@@ -8,54 +5,48 @@ export interface Customer {
   days: number;
 }
 
-const CUSTOMERS_COLLECTION = "customers";
+const STORAGE_KEY = "customers";
 
-function isCustomer(item: unknown): item is Customer {
-  return (
-    typeof item === "object" &&
-    item !== null &&
-    typeof (item as any).name === "string" &&
-    typeof (item as any).amount === "number" &&
-    typeof (item as any).mobile === "string" &&
-    typeof (item as any).days === "number"
+export const defaultCustomers: Customer[] = [
+  { name: "Rahul Sharma", amount: 2500, mobile: "9876543210", days: 3 },
+  { name: "Amit Kumar", amount: 4800, mobile: "8765432109", days: 7 },
+  { name: "Suresh Patel", amount: 1200, mobile: "7654321098", days: 1 },
+  { name: "Vikram Singh", amount: 7500, mobile: "6543210987", days: 12 },
+  { name: "Deepak Verma", amount: 3200, mobile: "5432109876", days: 5 },
+];
+
+function validateCustomers(data: unknown): Customer[] {
+  if (!Array.isArray(data)) return defaultCustomers;
+
+  return data.filter(
+    (item): item is Customer =>
+      Boolean(item) &&
+      typeof item.name === "string" &&
+      typeof item.amount === "number" &&
+      typeof item.mobile === "string" &&
+      typeof item.days === "number"
   );
 }
 
-function validateCustomers(data: unknown): Customer[] {
-  if (!Array.isArray(data)) return [];
-  return data.filter(isCustomer);
-}
-
-export async function readStoredCustomers(): Promise<Customer[]> {
-  if (!isFirebaseConfigured) return [];
+export function readStoredCustomers(): Customer[] {
+  if (typeof window === "undefined") return defaultCustomers;
 
   try {
-    const snapshot = await getDocs(collection(db, CUSTOMERS_COLLECTION));
-    const customers = snapshot.docs.map((doc) => doc.data());
-    return validateCustomers(customers);
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) return defaultCustomers;
+
+    return validateCustomers(JSON.parse(saved));
   } catch {
-    return [];
+    return defaultCustomers;
   }
 }
 
-export async function addCustomer(customer: Customer): Promise<void> {
-  if (!isFirebaseConfigured) return;
+export function writeStoredCustomers(customers: Customer[]): void {
+  if (typeof window === "undefined") return;
 
   try {
-    await addDoc(collection(db, CUSTOMERS_COLLECTION), customer);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
   } catch {
-    // Ignore database write failures for now.
+    // Ignore storage failures
   }
-}
-
-export function subscribeToCustomers(callback: (customers: Customer[]) => void): Unsubscribe {
-  if (!isFirebaseConfigured) {
-    callback([]);
-    return () => undefined;
-  }
-
-  return onSnapshot(collection(db, CUSTOMERS_COLLECTION), (snapshot) => {
-    const customers = snapshot.docs.map((doc) => doc.data());
-    callback(validateCustomers(customers));
-  });
 }

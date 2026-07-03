@@ -2,21 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { readStoredCustomers, type Customer } from "@/lib/customer-storage";
+import { defaultCustomers, readStoredCustomers, type Customer } from "@/lib/customer-storage";
 import { shareWhatsAppImage, sendSms } from "@/lib/payment-actions";
 
 export default function AllDues() {
   const router = useRouter();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
-    const loadCustomers = async () => {
-      const storedCustomers = await readStoredCustomers();
-      setCustomers(storedCustomers);
-    };
-
-    loadCustomers();
+    setCustomers(readStoredCustomers());
   }, []);
 
   return (

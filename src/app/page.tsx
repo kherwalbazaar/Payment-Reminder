@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addCustomer, readStoredCustomers, type Customer } from "@/lib/customer-storage";
+import { defaultCustomers, readStoredCustomers, writeStoredCustomers, type Customer } from "@/lib/customer-storage";
 import { shareWhatsAppImage, sendSms } from "@/lib/payment-actions";
 
 export default function Home() {
@@ -15,7 +15,7 @@ export default function Home() {
   const [amountError, setAmountError] = useState(false);
   const [mobileError, setMobileError] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
 
   const customerNameRef = useRef<HTMLInputElement>(null);
 
@@ -26,14 +26,12 @@ export default function Home() {
 
   useEffect(() => {
     customerNameRef.current?.focus();
-
-    const loadCustomers = async () => {
-      const storedCustomers = await readStoredCustomers();
-      setCustomers(storedCustomers);
-    };
-
-    loadCustomers();
+    setCustomers(readStoredCustomers());
   }, []);
+
+  useEffect(() => {
+    writeStoredCustomers(customers);
+  }, [customers]);
 
   useEffect(() => {
     if (dueAmount.length > 0 && !isAmountValid) {
@@ -76,31 +74,28 @@ export default function Home() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid || isProcessing) return;
 
     setIsProcessing(true);
 
-    const newCustomer: Customer = {
-      name: customerName.trim(),
-      amount: parseFloat(dueAmount),
-      mobile: mobileNumber,
-      days: 0,
-    };
-
-    await addCustomer(newCustomer);
-    setCustomers((prev) => [newCustomer, ...prev]);
-    setIsProcessing(false);
-    setCustomerName("");
-    setDueAmount("");
-    setMobileNumber("");
-    setShowToast(true);
-
     setTimeout(() => {
-      setShowToast(false);
-      customerNameRef.current?.focus();
-    }, 3500);
+      setIsProcessing(false);
+      setCustomers((prev) => [
+        { name: customerName.trim(), amount: parseFloat(dueAmount), mobile: mobileNumber, days: 0 },
+        ...prev,
+      ]);
+      setCustomerName("");
+      setDueAmount("");
+      setMobileNumber("");
+      setShowToast(true);
+
+      setTimeout(() => {
+        setShowToast(false);
+        customerNameRef.current?.focus();
+      }, 3500);
+    }, 1800);
   };
 
   return (
